@@ -1,19 +1,44 @@
-# Arquitetura de Depósitos  
+# Arquitetura de Depósitos
 
-## Introdução  
-A arquitetura de depósitos é fundamental para a eficiência operacional em um armazém ou centro de distribuição. Essa infraestrutura garante o armazenamento adequado dos produtos, facilitando o acesso e a movimentação dos itens.  
+## Tipos de Depósitos
 
-## Componentes Principais  
-1. **Layout do Armazém**  
-   - O layout do armazém deve ser planejado para maximizar o espaço e minimizar o tempo de movimentação. Isso inclui a disposição das prateleiras, áreas de carga e descarga e corredores.  
+1. **Depósitos Físicos**  
+   - Características: Localização física, capacidade definida, operações manuais.  
+   - Exemplos: Armazéns, centros de distribuição.
 
-2. **Sistemas de Manuseio de Materiais**  
-   - Os sistemas de manuseio de materiais, como paleteiras, empilhadeiras e transportadores, são essenciais para otimizar o fluxo de produtos dentro do armazém.  
+2. **Depósitos Virtuais**  
+   - Características: Não possuem uma localização física fixa, baseados em sistemas de informação.  
+   - Exemplos: Sistemas de gerenciamento de estoques digitais.
 
-3. **Tecnologia da Informação**  
-   - A implementação de tecnologias, como sistemas de gestão de armazéns (WMS), pode melhorar a visibilidade e o controle sobre os estoques, além de facilitar o rastreamento de produtos.  
+3. **Depósitos Híbridos**  
+   - Características: Combinação entre depósitos físicos e virtuais, oferecendo flexibilidade nas operações.
 
-## Benefícios  
-- **Eficiência**: Reduz o tempo de busca e movimentação de produtos.  
-- **Flexibilidade**: Permite adaptações rápidas a mudanças na demanda.  
-- **Redução de Custos**: Minimiza os custos operacionais relacionados ao armazenamento e transporte.
+## Fluxo de Operações nos Depósitos
+
+![Fluxo de Operações](link_para_fluxo_diagrama.png)
+
+## Comparação: Depósitos Físicos vs Virtuais
+
+| Característica | Depósitos Físicos  | Depósitos Virtuais |
+|----------------|---------------------|--------------------|
+| Localização    | Fixa                | Variável           |
+| Capacidade     | Limitada            | Ilimitada          |
+| Acesso         | Manual              | Automático         |
+| Custo          | Mais elevado        | Menor custo        |
+
+## Diretrizes para a Configuração de Depósitos
+
+1. **Definir Tipos de Depósitos**  
+   - Escolher entre depósitos físicos, virtuais ou híbridos com base nas necessidades da operação.
+
+2. **Organização do Espaço**  
+   - Planejar a disposição dos produtos nos depósitos físicos para otimizar o espaço e facilitar o acesso.
+
+3. **Sistemas de Informações**  
+   - Implementar softwares de gerenciamento para rastreamento e controle de depósitos virtuais.
+
+4. **Treinamento da Equipe**  
+   - Capacitar colaboradores para manipularem estoque em ambos os tipos de depósitos.
+
+5. **Monitoramento e Avaliação**  
+   - Realizar análises periódicas sobre a eficiência e eficácia dos depósitos.

@@ -11,13 +11,10 @@ Sistema completo para rastreabilidade e controle de estoque de produtos em proce
 ## 📋 Índice
 
 1. [Análise do Problema](#análise-do-problema)
-2. [Arquitetura de Solução](#arquitetura-de-solução)
-3. [Entidades e Modelo de Dados](#entidades-e-modelo-de-dados)
-4. [Fluxo de Movimentação](#fluxo-de-movimentação)
-5. [Procedimento Operacional](#procedimento-operacional)
-6. [Relatórios](#relatórios)
-7. [Tecnologias Recomendadas](#tecnologias-recomendadas)
-8. [Benefícios](#benefícios)
+2. [Fluxo de Movimentação](#fluxo-de-movimentação)
+3. [Procedimento Operacional](#procedimento-operacional)
+4. [Relatórios](#relatórios)
+5. [Benefícios](#benefícios)
 
 ---
 
@@ -41,163 +38,6 @@ Sistema completo para rastreabilidade e controle de estoque de produtos em proce
 
 ---
 
-## 🏗️ Arquitetura de Solução
-
-### Estrutura de Depósitos
-
-```
-┌─────────────────────────────────────────────────────────┐
-│         DEPÓSITO VENDA (Principal)                      │
-│  Presunto Inteiro (EAN: XXXX)                           │
-│  Quantidade: 100 un                                     │
-└────────────────┬────────────────────────────────────────┘
-                 │
-                 │ TRANSFERÊNCIA SAÍDA
-                 │ (Top 1 - Automático)
-                 ▼
-┌─────────────────────────────────────────────────────────┐
-│      DEPÓSITO 10 - FATIADO (Intermediário)              │
-│  Status: EM PROCESSAMENTO                               │
-│  Presunto Inteiro (EAN: XXXX)                           │
-│  Quantidade: 50 un                                      │
-└────────────────┬────────────────────────────────────────┘
-                 │
-                 │ [PROCESSAMENTO MANUAL - Jean]
-                 │
-                 ▼
-┌─────────────────────────────────────────────────────────┐
-│   DEPÓSITO VENDA (Novo Setor/Endereço)                 │
-│  Presunto Fatiado (EAN: YYYY)                           │
-│  Quantidade: 50 un                                      │
-│  TRANSFERÊNCIA ENTRADA (Top 2 - Automático)            │
-└─────────────────────────────────────────────────────────┘
-```
-
----
-
-## 📊 Entidades e Modelo de Dados
-
-### TABELA: Produtos
-```sql
-CREATE TABLE produtos (
-    id_produto INT PRIMARY KEY AUTO_INCREMENT,
-    ean VARCHAR(13) UNIQUE NOT NULL,
-    nome VARCHAR(255) NOT NULL,
-    tipo ENUM('ORIGINAL', 'PROCESSADO') NOT NULL,
-    produto_origem_id INT,
-    descricao TEXT,
-    ativo BOOLEAN DEFAULT TRUE,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (produto_origem_id) REFERENCES produtos(id_produto)
-);
-
-EXEMPLO:
-- ID: 1, EAN: 1234567890123, Nome: Presunto Inteiro 500g, Tipo: ORIGINAL
-- ID: 2, EAN: 9876543210987, Nome: Presunto Fatiado 250g, Tipo: PROCESSADO, Origem: 1
-```
-
-### TABELA: Depósitos
-```sql
-CREATE TABLE depositos (
-    id_deposito INT PRIMARY KEY AUTO_INCREMENT,
-    nome VARCHAR(255) NOT NULL,
-    tipo ENUM('VENDA', 'PROCESSAMENTO', 'INTERMEDIARIO') NOT NULL,
-    localizacao VARCHAR(255),
-    responsavel VARCHAR(255),
-    ativo BOOLEAN DEFAULT TRUE,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-EXEMPLO:
-- ID: 1, Nome: Venda Principal, Tipo: VENDA, Localização: Prédio A - Andar 2
-- ID: 2, Nome: Venda (Setor Fatiados), Tipo: VENDA, Localização: Prédio A - Andar 1
-- ID: 10, Nome: Fatiado, Tipo: INTERMEDIARIO, Localização: Sala de Processamento
-```
-
-### TABELA: Lotes
-```sql
-CREATE TABLE lotes (
-    id_lote INT PRIMARY KEY AUTO_INCREMENT,
-    numero_lote VARCHAR(50) UNIQUE NOT NULL,
-    produto_origem_id INT NOT NULL,
-    produto_processado_id INT,
-    quantidade_original INT NOT NULL,
-    quantidade_processada INT,
-    quantidade_perdida INT DEFAULT 0,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    data_saida TIMESTAMP,
-    data_processamento TIMESTAMP,
-    data_entrada_processado TIMESTAMP,
-    status ENUM('PENDENTE', 'EM_PROCESSAMENTO', 'PROCESSADO', 'CANCELADO') DEFAULT 'PENDENTE',
-    responsavel VARCHAR(255),
-    observacoes TEXT,
-    FOREIGN KEY (produto_origem_id) REFERENCES produtos(id_produto),
-    FOREIGN KEY (produto_processado_id) REFERENCES produtos(id_produto)
-);
-
-EXEMPLO:
-- ID: 1, Número: LOT-2026-001, Produto Origem: 1, Quantidade: 50
-- Status: PROCESSADO, Quantidade Processada: 48, Perdida: 2
-- Responsável: Jean Silva
-```
-
-### TABELA: Movimentações de Estoque
-```sql
-CREATE TABLE movimentacoes_estoque (
-    id_movimentacao INT PRIMARY KEY AUTO_INCREMENT,
-    id_lote INT NOT NULL,
-    tipo ENUM('ENTRADA', 'SAIDA', 'TRANSFERENCIA_SAIDA', 'TRANSFERENCIA_ENTRADA', 'AJUSTE') NOT NULL,
-    deposito_origem_id INT,
-    deposito_destino_id INT,
-    produto_id INT NOT NULL,
-    quantidade INT NOT NULL,
-    data_movimentacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    documento_referencia VARCHAR(100),
-    usuario_responsavel VARCHAR(255) NOT NULL,
-    observacoes TEXT,
-    status ENUM('PENDENTE', 'CONFIRMADA', 'CANCELADA') DEFAULT 'PENDENTE',
-    FOREIGN KEY (id_lote) REFERENCES lotes(id_lote),
-    FOREIGN KEY (deposito_origem_id) REFERENCES depositos(id_deposito),
-    FOREIGN KEY (deposito_destino_id) REFERENCES depositos(id_deposito),
-    FOREIGN KEY (produto_id) REFERENCES produtos(id_produto)
-);
-
-EXEMPLO:
-- ID: 1, Lote: 1, Tipo: TRANSFERENCIA_SAIDA
-  Origem: Venda Principal → Destino: Depósito 10 (Fatiado)
-  Produto: 1 (Presunto Inteiro), Quantidade: 50
-  Status: CONFIRMADA
-
-- ID: 2, Lote: 1, Tipo: TRANSFERENCIA_ENTRADA
-  Origem: Depósito 10 (Fatiado) → Destino: Venda (Setor Fatiados)
-  Produto: 2 (Presunto Fatiado), Quantidade: 48
-  Status: CONFIRMADA
-```
-
-### TABELA: Saldos por Depósito
-```sql
-CREATE TABLE saldos_depositos (
-    id_saldo INT PRIMARY KEY AUTO_INCREMENT,
-    deposito_id INT NOT NULL,
-    produto_id INT NOT NULL,
-    quantidade_atual INT DEFAULT 0,
-    quantidade_reservada INT DEFAULT 0,
-    ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    lote_ultimo_id INT,
-    FOREIGN KEY (deposito_id) REFERENCES depositos(id_deposito),
-    FOREIGN KEY (produto_id) REFERENCES produtos(id_produto),
-    FOREIGN KEY (lote_ultimo_id) REFERENCES lotes(id_lote),
-    UNIQUE KEY unique_deposito_produto (deposito_id, produto_id)
-);
-
-EXEMPLO:
-- Depósito 1 + Produto 1: 50 un (Presunto Inteiro)
-- Depósito 10 + Produto 1: 0 un (Zerado - OK)
-- Depósito 2 + Produto 2: 48 un (Presunto Fatiado)
-```
-
----
-
 ## 🔄 Fluxo de Movimentação
 
 ### Visão Geral Completa
@@ -205,7 +45,7 @@ EXEMPLO:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ FASE 1: ENTRADA DO PRODUTO ORIGINAL                             │
-├─────────────────────────────────────────────────────────────────┤
+├─────────────────────────────────────────────────────────────────┐
 │ • Ação: Recebimento de NF de Compra                              │
 │ • Produto: Presunto Inteiro (EAN: XXXX)                          │
 │ • Quantidade: 100 peças                                          │
@@ -217,7 +57,7 @@ EXEMPLO:
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │ FASE 2: SAÍDA PARA FATIAMENTO (TOP 1)                            │
-├─────────────────────────────────────────────────────────────────┤
+├─────────────────────────────────────────────────────────────────┐
 │ • Ação: Requisição de Processamento                              │
 │ • Responsável: Jean Silva / Gerente                              │
 │ • Quantidade: 50 peças                                           │
@@ -232,7 +72,7 @@ EXEMPLO:
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │ FASE 3: PROCESSAMENTO (Atividade Manual - Fora do Sistema)       │
-├─────────────────────────────────────────────────────────────────┤
+├─────────────────────────────────────────────────────────────────┐
 │ • Responsável: Jean Silva                                        │
 │ • Atividade: Fatiamento das 50 peças                             │
 │ • Controle: Jean valida quantidade processada                    │
@@ -243,7 +83,7 @@ EXEMPLO:
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │ FASE 4: ENTRADA DO PRODUTO PROCESSADO (TOP 2)                    │
-├─────────────────────────────────────────────────────────────────┤
+├─────────────────────────────────────────────────────────────────┐
 │ • Ação: Confirmação de Fatiamento Concluído                      │
 │ • Responsável: Jean Silva (confirma quantidade)                  │
 │ • Produto Original: Presunto Inteiro (XXXX)                      │
@@ -260,13 +100,13 @@ EXEMPLO:
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │ FASE 5: LIMPEZA E FECHAMENTO                                     │
-├─────────────────────────────────────────────────────────────────┤
+├─────────────────────────────────────────────────────────────────┐
 │ • Verificação: Depósito 10 (Fatiado) = 0 unidades? ✓ SIM        │
 │ • Ação: Sistema zera automaticamente                             │
 │ • Log: ✓ Saída final registrada                                  │
 │ • Status Lote: PROCESSADO (Fechado)                              │
 │ • Auditoria: Relatório disponível para consulta                  │
-│ • Rastreamento: Completo e rastreável                            ���
+│ • Rastreamento: Completo e rastreável                            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -543,23 +383,6 @@ VERIFICAÇÕES REALIZADAS:
 RESULTADO FINAL: ✓ AUDITORIA APROVADA
 ═══════════════════════════════════════════════════════════════
 ```
-
----
-
-## 🛠️ Tecnologias Recomendadas
-
-| Aspecto | Solução | Observação |
-|---------|---------|-----------|
-| **ERP Completo** | SAP, TOTVS Omie | Maior investimento, máxima funcionalidade |
-| **ERP Open Source** | Odoo (módulo Inventory) | Custo menor, personalizável |
-| **ERP Lightweight** | ERPNext, Frappe | Moderno, cloud-first, escalável |
-| **Database** | PostgreSQL + Redis | Confiável, open-source, performance |
-| **Backend API** | Node.js/Express ou Python/Django | Integração com sistemas existentes |
-| **Frontend Web** | React, Vue.js ou Angular | Interface responsiva |
-| **Mobile** | React Native ou Flutter | App para Jean confirmar no celular |
-| **Relatórios** | Power BI, Metabase ou Superset | Visualização e análise de dados |
-| **Auditoria** | PostgreSQL Audit Log | Rastreamento imutável de alterações |
-| **Integração** | API REST, Webhooks | Comunicação entre sistemas |
 
 ---
 

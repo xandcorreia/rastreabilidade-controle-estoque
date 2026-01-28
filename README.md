@@ -1,83 +1,610 @@
-# 📊 Sistema de Rastreabilidade e Controle de Estoque
+# 📦 Sistema de Rastreabilidade e Controle de Estoque
 
-## Introdução
-Este repositório contém a documentação completa sobre o sistema de controle de estoque e rastreabilidade de produtos para processamento de produtos fatiados (ex: presunto).
+## 🎯 Objetivo
 
-## 📋 Objetivo do Sistema
-Garantir a rastreabilidade 100% de produtos desde a compra até a venda final, eliminar desaparecimentos de estoque e manter controle automático de todas as movimentações de produtos em processamento.
+Sistema completo para rastreabilidade e controle de estoque de produtos em processo de transformação (fatiamento), garantindo auditoria total e eliminação de controles manuais em cadernos.
 
-## 🗂️ Estrutura de Pastas
-```
-.
-├── README.md                          # Este arquivo
-├── 1-ANALISE_COMPLETA.md             # Análise detalhada da solução
-├── 2-ARQUITETURA_DEPOSITOS.md        # Estrutura de depósitos
-├── 3-MODELO_DADOS.md                 # Schema do banco de dados
-├── 4-FLUXO_OPERACIONAL.md            # Procedimento passo a passo
-├── 5-RELATORIOS.md                   # Relatórios essenciais
-├── 6-TECNOLOGIAS.md                  # Stack recomendado
-├── 7-BENEFICIOS.md                   # Benefícios da solução
-├── DIAGRAMAS/
-│   ├── arquitetura-depositos.txt
-│   ├── fluxo-movimentacao.txt
-│   └── modelo-dados.txt
-└── SQL/
-    ├── criar-tabelas.sql
-    ├── inserts-exemplo.sql
-    └── queries-relatorios.sql
-```
-
-## 🎯 Conteúdo da Documentação
-
-Este repositório contém 7 documentos principais que cobrem:
-
-1. **Análise Completa** - Visão geral da solução
-2. **Arquitetura de Depósitos** - Como estruturar os depósitos
-3. **Modelo de Dados** - Schema do banco de dados
-4. **Fluxo Operacional** - Procedimentos passo a passo
-5. **Relatórios** - Consultas e análises
-6. **Tecnologias** - Stack recomendado
-7. **Benefícios** - Vantagens da implementação
-
-## 🚀 Como Usar Este Repositório
-
-### Para Gerentes/Stakeholders
-1. Leia `1-ANALISE_COMPLETA.md`
-2. Visualize `DIAGRAMAS/arquitetura-depositos.txt`
-3. Confira `7-BENEFICIOS.md`
-
-### Para Desenvolvedores
-1. Estude `3-MODELO_DADOS.md`
-2. Verifique `SQL/criar-tabelas.sql`
-3. Implemente conforme `2-ARQUITETURA_DEPOSITOS.md`
-
-### Para Analistas de Negócio
-1. Compreenda `4-FLUXO_OPERACIONAL.md`
-2. Revise `5-RELATORIOS.md`
-3. Valide com `2-ARQUITETURA_DEPOSITOS.md`
-
-## 📥 Download em PDF
-
-Para baixar toda a documentação em PDF:
-```bash
-# Instale pandoc: https://pandoc.org/installing.html
-
-# Gere um PDF único com toda documentação:
-pandoc *.md -o Rastreabilidade-Estoque-Completo.pdf
-```
-
-## 📞 Autor
-- **Desenvolvedor**: xandcorreia
-- **Data**: Janeiro 2026
-- **Status**: Documentação Completa
-
-## 📝 Licença
-Esta documentação é fornecida como referência para implementação interna.
+**Caso de Uso:** Presunto inteiro → Fatiado → Prateleira de venda
 
 ---
 
-**Próximos Passos:**
-1. ✅ Revisar toda a documentação
-2. ✅ Validar com equipe de negócio
-3. ✅ Adaptar para seu ERP
-4. ✅ Implementar o fluxo
+## 📋 Índice
+
+1. [Análise do Problema](#análise-do-problema)
+2. [Arquitetura de Solução](#arquitetura-de-solução)
+3. [Entidades e Modelo de Dados](#entidades-e-modelo-de-dados)
+4. [Fluxo de Movimentação](#fluxo-de-movimentação)
+5. [Procedimento Operacional](#procedimento-operacional)
+6. [Relatórios](#relatórios)
+7. [Tecnologias Recomendadas](#tecnologias-recomendadas)
+8. [Benefícios](#benefícios)
+
+---
+
+## 🔍 Análise do Problema
+
+### Situação Atual (Problema)
+- ❌ Produto desaparece do sistema durante fatiamento
+- ❌ Controle manual em caderno (Jean)
+- ❌ Sem rastreabilidade de movimentação
+- ❌ Impossível auditar quantidade processada
+- ❌ Sem log de perdas/desperdício
+- ❌ Risco de contagem incorreta
+
+### Solução Proposta
+- ✅ Criar Depósito intermediário "Fatiado"
+- ✅ Implementar 2 transferências automáticas (saída e entrada)
+- ✅ Rastreamento de lote completo
+- ✅ Log automático de todas operações
+- ✅ Auditoria de perdas
+- ✅ Eliminação de cadernos manuais
+
+---
+
+## 🏗️ Arquitetura de Solução
+
+### Estrutura de Depósitos
+
+```
+┌─────────────────────────────────────────────────────────┐
+│         DEPÓSITO VENDA (Principal)                      │
+│  Presunto Inteiro (EAN: XXXX)                           │
+│  Quantidade: 100 un                                     │
+└────────────────┬────────────────────────────────────────┘
+                 │
+                 │ TRANSFERÊNCIA SAÍDA
+                 │ (Top 1 - Automático)
+                 ▼
+┌─────────────────────────────────────────────────────────┐
+│      DEPÓSITO 10 - FATIADO (Intermediário)              │
+│  Status: EM PROCESSAMENTO                               │
+│  Presunto Inteiro (EAN: XXXX)                           │
+│  Quantidade: 50 un                                      │
+└────────────────┬────────────────────────────────────────┘
+                 │
+                 │ [PROCESSAMENTO MANUAL - Jean]
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────────┐
+│   DEPÓSITO VENDA (Novo Setor/Endereço)                 │
+│  Presunto Fatiado (EAN: YYYY)                           │
+│  Quantidade: 50 un                                      │
+│  TRANSFERÊNCIA ENTRADA (Top 2 - Automático)            │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📊 Entidades e Modelo de Dados
+
+### TABELA: Produtos
+```sql
+CREATE TABLE produtos (
+    id_produto INT PRIMARY KEY AUTO_INCREMENT,
+    ean VARCHAR(13) UNIQUE NOT NULL,
+    nome VARCHAR(255) NOT NULL,
+    tipo ENUM('ORIGINAL', 'PROCESSADO') NOT NULL,
+    produto_origem_id INT,
+    descricao TEXT,
+    ativo BOOLEAN DEFAULT TRUE,
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (produto_origem_id) REFERENCES produtos(id_produto)
+);
+
+EXEMPLO:
+- ID: 1, EAN: 1234567890123, Nome: Presunto Inteiro 500g, Tipo: ORIGINAL
+- ID: 2, EAN: 9876543210987, Nome: Presunto Fatiado 250g, Tipo: PROCESSADO, Origem: 1
+```
+
+### TABELA: Depósitos
+```sql
+CREATE TABLE depositos (
+    id_deposito INT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(255) NOT NULL,
+    tipo ENUM('VENDA', 'PROCESSAMENTO', 'INTERMEDIARIO') NOT NULL,
+    localizacao VARCHAR(255),
+    responsavel VARCHAR(255),
+    ativo BOOLEAN DEFAULT TRUE,
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+EXEMPLO:
+- ID: 1, Nome: Venda Principal, Tipo: VENDA, Localização: Prédio A - Andar 2
+- ID: 2, Nome: Venda (Setor Fatiados), Tipo: VENDA, Localização: Prédio A - Andar 1
+- ID: 10, Nome: Fatiado, Tipo: INTERMEDIARIO, Localização: Sala de Processamento
+```
+
+### TABELA: Lotes
+```sql
+CREATE TABLE lotes (
+    id_lote INT PRIMARY KEY AUTO_INCREMENT,
+    numero_lote VARCHAR(50) UNIQUE NOT NULL,
+    produto_origem_id INT NOT NULL,
+    produto_processado_id INT,
+    quantidade_original INT NOT NULL,
+    quantidade_processada INT,
+    quantidade_perdida INT DEFAULT 0,
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_saida TIMESTAMP,
+    data_processamento TIMESTAMP,
+    data_entrada_processado TIMESTAMP,
+    status ENUM('PENDENTE', 'EM_PROCESSAMENTO', 'PROCESSADO', 'CANCELADO') DEFAULT 'PENDENTE',
+    responsavel VARCHAR(255),
+    observacoes TEXT,
+    FOREIGN KEY (produto_origem_id) REFERENCES produtos(id_produto),
+    FOREIGN KEY (produto_processado_id) REFERENCES produtos(id_produto)
+);
+
+EXEMPLO:
+- ID: 1, Número: LOT-2026-001, Produto Origem: 1, Quantidade: 50
+- Status: PROCESSADO, Quantidade Processada: 48, Perdida: 2
+- Responsável: Jean Silva
+```
+
+### TABELA: Movimentações de Estoque
+```sql
+CREATE TABLE movimentacoes_estoque (
+    id_movimentacao INT PRIMARY KEY AUTO_INCREMENT,
+    id_lote INT NOT NULL,
+    tipo ENUM('ENTRADA', 'SAIDA', 'TRANSFERENCIA_SAIDA', 'TRANSFERENCIA_ENTRADA', 'AJUSTE') NOT NULL,
+    deposito_origem_id INT,
+    deposito_destino_id INT,
+    produto_id INT NOT NULL,
+    quantidade INT NOT NULL,
+    data_movimentacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    documento_referencia VARCHAR(100),
+    usuario_responsavel VARCHAR(255) NOT NULL,
+    observacoes TEXT,
+    status ENUM('PENDENTE', 'CONFIRMADA', 'CANCELADA') DEFAULT 'PENDENTE',
+    FOREIGN KEY (id_lote) REFERENCES lotes(id_lote),
+    FOREIGN KEY (deposito_origem_id) REFERENCES depositos(id_deposito),
+    FOREIGN KEY (deposito_destino_id) REFERENCES depositos(id_deposito),
+    FOREIGN KEY (produto_id) REFERENCES produtos(id_produto)
+);
+
+EXEMPLO:
+- ID: 1, Lote: 1, Tipo: TRANSFERENCIA_SAIDA
+  Origem: Venda Principal → Destino: Depósito 10 (Fatiado)
+  Produto: 1 (Presunto Inteiro), Quantidade: 50
+  Status: CONFIRMADA
+
+- ID: 2, Lote: 1, Tipo: TRANSFERENCIA_ENTRADA
+  Origem: Depósito 10 (Fatiado) → Destino: Venda (Setor Fatiados)
+  Produto: 2 (Presunto Fatiado), Quantidade: 48
+  Status: CONFIRMADA
+```
+
+### TABELA: Saldos por Depósito
+```sql
+CREATE TABLE saldos_depositos (
+    id_saldo INT PRIMARY KEY AUTO_INCREMENT,
+    deposito_id INT NOT NULL,
+    produto_id INT NOT NULL,
+    quantidade_atual INT DEFAULT 0,
+    quantidade_reservada INT DEFAULT 0,
+    ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    lote_ultimo_id INT,
+    FOREIGN KEY (deposito_id) REFERENCES depositos(id_deposito),
+    FOREIGN KEY (produto_id) REFERENCES produtos(id_produto),
+    FOREIGN KEY (lote_ultimo_id) REFERENCES lotes(id_lote),
+    UNIQUE KEY unique_deposito_produto (deposito_id, produto_id)
+);
+
+EXEMPLO:
+- Depósito 1 + Produto 1: 50 un (Presunto Inteiro)
+- Depósito 10 + Produto 1: 0 un (Zerado - OK)
+- Depósito 2 + Produto 2: 48 un (Presunto Fatiado)
+```
+
+---
+
+## 🔄 Fluxo de Movimentação
+
+### Visão Geral Completa
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ FASE 1: ENTRADA DO PRODUTO ORIGINAL                             │
+├─────────────────────────────────────────────────────────────────┤
+│ • Ação: Recebimento de NF de Compra                              │
+│ • Produto: Presunto Inteiro (EAN: XXXX)                          │
+│ • Quantidade: 100 peças                                          │
+│ • Depósito: Venda (Principal)                                    │
+│ • Sistema: ENTRADA registrada automaticamente                    │
+│ • Log: ✓ Criado em movimentacoes_estoque                        │
+│ • Saldo: Depósito Venda +100 un                                  │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ FASE 2: SAÍDA PARA FATIAMENTO (TOP 1)                            │
+├─────────────────────────────────────────────────────────────────┤
+│ • Ação: Requisição de Processamento                              │
+│ • Responsável: Jean Silva / Gerente                              │
+│ • Quantidade: 50 peças                                           │
+│ • De: Depósito Venda (Principal)                                 │
+│ • Para: Depósito 10 (Fatiado)                                    │
+│ • Tipo: TRANSFERENCIA_SAIDA                                      │
+│ • Sistema: Lote criado → Status: EM_PROCESSAMENTO                │
+│ • Log: ✓ Movimentação registrada automaticamente                 │
+│ • Saldo: Venda: -50 / Fatiado: +50                               │
+│ • Rastreamento: ID do Lote vinculado                             │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ FASE 3: PROCESSAMENTO (Atividade Manual - Fora do Sistema)       │
+├─────────────────────────────────────────────────────────────────┤
+│ • Responsável: Jean Silva                                        │
+│ • Atividade: Fatiamento das 50 peças                             │
+│ • Controle: Jean valida quantidade processada                    │
+│ • Duração: ~ 2-4 horas                                           │
+│ • Sistema: Aguarda confirmação do processamento                  │
+│ • Status Lote: EM_PROCESSAMENTO (pendente confirmação)           │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ FASE 4: ENTRADA DO PRODUTO PROCESSADO (TOP 2)                    │
+├─────────────────────────────────────────────────────────────────┤
+│ • Ação: Confirmação de Fatiamento Concluído                      │
+│ • Responsável: Jean Silva (confirma quantidade)                  │
+│ • Produto Original: Presunto Inteiro (XXXX)                      │
+│ • Produto Novo: Presunto Fatiado (EAN: YYYY) ← NOVO PRODUTO     │
+│ • Quantidade Processada: 48 peças (2 de perda/desperdício)       │
+│ • De: Depósito 10 (Fatiado)                                      │
+│ • Para: Depósito Venda (Setor Fatiados) - Novo Endereço          │
+│ • Tipo: TRANSFERENCIA_ENTRADA                                    │
+│ • Sistema: Lote atualizado → Status: PROCESSADO                  │
+│ • Log: ✓ Movimentação registrada automaticamente                 │
+│ • Vínculo: Lote #001 conecta produtos original e processado      │
+│ • Saldo: Fatiado: -50 / Venda Fatiados: +48                      │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ FASE 5: LIMPEZA E FECHAMENTO                                     │
+├─────────────────────────────────────────────────────────────────┤
+│ • Verificação: Depósito 10 (Fatiado) = 0 unidades? ✓ SIM        │
+│ • Ação: Sistema zera automaticamente                             │
+│ • Log: ✓ Saída final registrada                                  │
+│ • Status Lote: PROCESSADO (Fechado)                              │
+│ • Auditoria: Relatório disponível para consulta                  │
+│ • Rastreamento: Completo e rastreável                            ���
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ⚙️ Procedimento Operacional
+
+### PASSO 1: Recebimento da Mercadoria
+```
+GATILHO: Recebimento de NF de Compra
+RESPONSÁVEL: Almoxarife / Recebimento
+
+AÇÕES:
+1. Sistema recebe NF (integração com NF-e)
+2. Mercadoria conferida fisicamente
+3. Sistema cria ENTRADA automaticamente
+4. Depósito Venda: +100 un Presunto Inteiro (XXXX)
+5. Log: Criado automaticamente em movimentacoes_estoque
+6. Saldo Disponível: Venda = 100 un
+
+DOCUMENTO: NF-e de Entrada
+STATUS NO SISTEMA: CONFIRMADA
+```
+
+### PASSO 2: Requisição para Fatiamento (TOP 1 - Saída)
+```
+GATILHO: Jean/Gerente solicita "Enviar para fatiamento"
+RESPONSÁVEL: Gerente de Estoque / Jean
+
+AÇÕES:
+1. Sistema gera Requisição de Processamento
+2. Número de Lote criado: LOT-2026-001
+3. Transferência: Venda Principal → Depósito 10
+4. Quantidade: 50 un Presunto Inteiro (XXXX)
+5. Lote Status: EM_PROCESSAMENTO
+6. Log: Movimentação TRANSFERENCIA_SAIDA criada
+7. Saldo Venda: 100 - 50 = 50 un
+8. Saldo Depósito 10: 0 + 50 = 50 un
+
+DOCUMENTO: Requisição de Processamento #001
+VINCULAÇÃO: Lote LOT-2026-001
+STATUS NO SISTEMA: CONFIRMADA
+```
+
+### PASSO 3: Processamento (Atividade Manual)
+```
+GATILHO: Lote entra em "EM_PROCESSAMENTO"
+RESPONSÁVEL: Jean Silva (Operador de Fatiamento)
+
+AÇÕES:
+1. Jean recebe 50 peças do Depósito 10
+2. Realiza fatiamento manualmente
+3. Conta quantidade de peças processadas: 48 un
+4. Identifica 2 peças de perda/desperdício
+5. Registra no sistema: "Processamento concluído - 48 un fatiadas"
+6. Sistema aguarda esta confirmação
+
+CONTROLE:
+- Antes: Jean usava caderno manual
+- Agora: Jean confirma no sistema (aplicativo mobile/web)
+- Tempo: ~30 segundos para confirmação
+
+DOCUMENTO: Confirmação de Processamento
+LOTE: LOT-2026-001
+QUANTIDADE PROCESSADA: 48 un
+QUANTIDADE PERDIDA: 2 un
+```
+
+### PASSO 4: Entrada do Produto Processado (TOP 2 - Entrada)
+```
+GATILHO: Jean confirma "Fatiamento concluído"
+RESPONSÁVEL: Sistema (Automático) + Jean (Conferência)
+
+AÇÕES:
+1. Sistema cria ENTRADA no Depósito Venda (Setor Fatiados)
+2. Produto: Presunto Fatiado (EAN: YYYY) ← NOVO PRODUTO
+3. Quantidade: 48 un (conforme confirmado por Jean)
+4. Transferência: Depósito 10 → Depósito Venda (Setor Fatiados)
+5. Tipo: TRANSFERENCIA_ENTRADA
+6. Lote Status: PROCESSADO
+7. Log: Movimentação TRANSFERENCIA_ENTRADA criada
+8. Saldo Depósito 10: 50 - 50 = 0 un (ZERADO ✓)
+9. Saldo Venda Fatiados: 0 + 48 = 48 un
+
+VINCULAÇÃO LOTE:
+- Produto Origem: Presunto Inteiro (1)
+- Produto Processado: Presunto Fatiado (2)
+- Quantidade Original: 50 un
+- Quantidade Final: 48 un
+- Perda: 2 un (4%)
+- Rastreabilidade: COMPLETA
+
+DOCUMENTO: Nota Interna de Movimentação
+LOTE: LOT-2026-001 (FECHADO)
+STATUS NO SISTEMA: CONFIRMADA
+```
+
+### PASSO 5: Auditoria e Relatório
+```
+GATILHO: Fechamento do Lote (Automático)
+RESPONSÁVEL: Sistema (Automático)
+
+VERIFICAÇÕES:
+1. Depósito 10 zerado? SIM ✓
+2. Quantidade Processada registrada? SIM ✓
+3. Vínculo de Lote completo? SIM ✓
+4. Todas as movimentações logadas? SIM ✓
+
+AÇÕES:
+1. Lote marcado como PROCESSADO
+2. Relatório gerado automaticamente
+3. Disponível para auditoria/consulta
+4. Pronto para relatório mensal
+
+DOCUMENTO: Relatório de Lote Concluído
+DISPONIBILIDADE: Imediata no Sistema
+```
+
+---
+
+## 📊 Relatórios
+
+### 1. RASTREABILIDADE COMPLETA DO LOTE
+
+```
+═══════════════════════════════════════════════════════════════
+                    RASTREABILIDADE DE LOTE
+═══════════════════════════════════════════════════════════════
+
+Número do Lote: LOT-2026-001
+Período: Janeiro 2026
+
+PRODUTO ORIGINAL:
+├── Nome: Presunto Inteiro 500g
+├── EAN: 1234567890123
+├── Quantidade Inicial: 50 un
+└── Data de Entrada: 28/01/2026 08:00
+
+PROCESSAMENTO:
+├── Responsável: Jean Silva
+├── Data de Saída: 28/01/2026 09:30
+├── Data de Processamento: 28/01/2026 16:00
+├── Depósito Intermediário: Fatiado (Depósito 10)
+└── Duração: ~6h 30min
+
+PRODUTO FINAL:
+├── Nome: Presunto Fatiado 250g
+├── EAN: 9876543210987
+├── Quantidade Processada: 48 un
+├── Data de Entrada: 28/01/2026 17:00
+└── Destino Final: Depósito Venda (Setor Fatiados)
+
+PERDAS E DESPERDÍCIO:
+├── Quantidade Perdida: 2 un
+├── Percentual de Perda: 4%
+├── Causa: Danos durante fatiamento
+└── Custo Estimado: R$ XX,XX
+
+MOVIMENTAÇÕES REGISTRADAS:
+├── Mov. 1: TRANSFERENCIA_SAIDA (Venda → Fatiado)
+├── Mov. 2: TRANSFERENCIA_ENTRADA (Fatiado → Venda)
+└── Total de Registros: 2
+
+STATUS FINAL: ✓ PROCESSADO E FECHADO
+AUDITORIA: Pronta para consulta
+═══════════════════════════════════════════════════════════════
+```
+
+### 2. ESTOQUE POR DEPÓSITO
+
+```
+═══════════════════════════════════════════════════════════════
+                   SALDO DE ESTOQUE - 28/01/2026
+═══════════════════════════════════════════════════════════════
+
+DEPÓSITO 1 - VENDA (Principal)
+├── Presunto Inteiro (XXXX): 50 un
+├── Presunto Fatiado (YYYY): 0 un
+└── TOTAL: 50 un
+
+DEPÓSITO 2 - VENDA (Setor Fatiados)
+├── Presunto Inteiro (XXXX): 0 un
+├── Presunto Fatiado (YYYY): 48 un
+└── TOTAL: 48 un
+
+DEPÓSITO 10 - FATIADO (Intermediário)
+├── Presunto Inteiro (XXXX): 0 un ✓ ZERADO
+├── Presunto Fatiado (YYYY): 0 un
+└── TOTAL: 0 un
+
+═══════════════════════════════════════════════════════════════
+ESTOQUE TOTAL NO SISTEMA: 98 un
+Perda Identificada: 2 un (controlada e rastreada)
+═══════════════════════════════════════════════════════════════
+```
+
+### 3. MOVIMENTAÇÕES DO MÊS
+
+```
+═══════════════════════════════════════════════════════════════
+            RELATÓRIO DE MOVIMENTAÇÕES - JANEIRO 2026
+═══════════════════════════════════════════════════════════════
+
+RESUMO GERAL:
+├── Total de Lotes Processados: 5
+├── Total de Movimentações: 10
+├── Período: 01/01 a 28/01/2026
+└── Status: 5 Fechados / 0 Pendentes
+
+PRODUTOS ORIGINAL:
+├── Presunto Inteiro (XXXX):
+│   ├── Entradas: 100 un (NF #001, #002, #003)
+│   ├── Saídas para Processamento: 95 un (5 lotes)
+│   ├── Saldo Disponível: 5 un
+│   └── % Processado: 95%
+
+PRODUTOS PROCESSADOS:
+├── Presunto Fatiado (YYYY):
+│   ├── Entradas de Processamento: 91 un (5 lotes)
+│   ├── Saídas para Venda: 91 un
+│   ├── Saldo Disponível: 0 un
+│   └── % Vendido: 100%
+
+PERDAS E DESPERDÍCIO:
+├── Total Processado: 95 un
+├── Total Recuperado: 91 un
+├── Total de Perda: 4 un
+├── Taxa Média de Perda: 4.2%
+└── Comparativo: Dentro do esperado ✓
+
+MOVIMENTAÇÕES POR TIPO:
+├── Transferências Saída: 5
+├── Transferências Entrada: 5
+├── Entradas de Compra: 3
+├── Ajustes: 2
+└── Total: 15
+
+═══════════════════════════════════════════════════════════════
+```
+
+### 4. AUDITORIA E RECONCILIAÇÃO
+
+```
+═══════════════════════════════════════════════════════════════
+                  RELATÓRIO DE AUDITORIA - JANEIRO 2026
+═══════════════════════════════════════════════════════════════
+
+VERIFICAÇÕES REALIZADAS:
+
+1. INTEGRIDADE DO LOTE:
+   ├── ✓ Todos os lotes com produto origem identificado
+   ├── ✓ Todos os lotes com produto processado identificado
+   ├── ✓ Todas as quantidades registradas
+   └── ✓ Sem discrepâncias
+
+2. RASTREABILIDADE:
+   ├── ✓ 100% dos lotes com histórico completo
+   ├── ✓ Todas as movimentações logadas
+   ├── ✓ Responsáveis identificados
+   └── ✓ Datas e horários precisos
+
+3. SALDOS:
+   ├── ✓ Depósito Fatiado sempre zerado após processamento
+   ├── ✓ Saldos reconciliados com movimentações
+   ├── ✓ Sem produtos perdidos
+   └── ✓ Perdas controladas e conhecidas
+
+4. DOCUMENTAÇÃO:
+   ├── ✓ Todas as requisições arquivadas
+   ├── ✓ Todas as confirmações registradas
+   ├── ✓ Logs disponíveis para auditoria
+   └── ✓ Pronta para fiscal/auditor
+
+RESULTADO FINAL: ✓ AUDITORIA APROVADA
+═══════════════════════════════════════════════════════════════
+```
+
+---
+
+## 🛠️ Tecnologias Recomendadas
+
+| Aspecto | Solução | Observação |
+|---------|---------|-----------|
+| **ERP Completo** | SAP, TOTVS Omie | Maior investimento, máxima funcionalidade |
+| **ERP Open Source** | Odoo (módulo Inventory) | Custo menor, personalizável |
+| **ERP Lightweight** | ERPNext, Frappe | Moderno, cloud-first, escalável |
+| **Database** | PostgreSQL + Redis | Confiável, open-source, performance |
+| **Backend API** | Node.js/Express ou Python/Django | Integração com sistemas existentes |
+| **Frontend Web** | React, Vue.js ou Angular | Interface responsiva |
+| **Mobile** | React Native ou Flutter | App para Jean confirmar no celular |
+| **Relatórios** | Power BI, Metabase ou Superset | Visualização e análise de dados |
+| **Auditoria** | PostgreSQL Audit Log | Rastreamento imutável de alterações |
+| **Integração** | API REST, Webhooks | Comunicação entre sistemas |
+
+---
+
+## ✅ Benefícios da Solução
+
+### Para o Negócio
+✓ **Rastreabilidade 100%**: Cada produto tem histórico completo do início ao fim  
+✓ **Sem "Desaparecimentos"**: Tudo registrado e rastreável no sistema  
+✓ **Auditoria Automática**: Relatórios disponíveis 24/7 para consulta  
+✓ **Controle de Perdas**: Identifica exatamente quanto foi perdido e onde  
+✓ **Responsabilidade**: Jean não precisa mais do caderno manual  
+✓ **Escalabilidade**: Funciona para múltiplos produtos/lotes simultâneos  
+
+### Para a Equipe
+✓ **Menos Trabalho Manual**: Jean confirma em 30 segundos (não horas em caderno)  
+✓ **Transparência**: Todos veem o status do processamento em tempo real  
+✓ **Menos Erros**: Sistema impede contagens incorretas  
+✓ **Documentação Automática**: Não precisa preencher formulários  
+
+### Para Financeiro/Fiscal
+✓ **Integração com Fiscal**: Dados prontos para NF-e  
+✓ **Custo de Desperdício**: Identificado e quantificado automaticamente  
+✓ **Rastreabilidade para Auditor**: Relatórios prontos para inspeção  
+✓ **Série Histórica**: Análise de tendências de perda  
+
+---
+
+## 🚀 Próximos Passos
+
+1. **Avaliar ERP**: Qual sistema usar (SAP, Odoo, customizado)?
+2. **Customizar**: Adaptar fluxo conforme necessidade específica
+3. **Implementar Dados**: Importar produtos, depósitos, saldos iniciais
+4. **Treinar Equipe**: Jean e gerentes usar o novo sistema
+5. **Testar**: Fazer alguns lotes teste antes de produção
+6. **Monitorar**: Acompanhar se rastreamento está funcionando
+7. **Otimizar**: Melhorias conforme feedback da operação
+
+---
+
+## 📧 Suporte e Dúvidas
+
+Para dúvidas sobre a implementação ou fluxo operacional, consulte a documentação adicional disponível neste repositório.
+
+---
+
+**Versão**: 1.0  
+**Data**: 28/01/2026  
+**Responsável**: Análise de Processos
